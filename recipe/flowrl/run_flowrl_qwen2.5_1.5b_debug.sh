@@ -5,7 +5,7 @@ export RAY_TMPDIR=/mnt/hwfile/linzhouhan/rt
 mkdir -p "$RAY_TMPDIR"
 
 unset ROCR_VISIBLE_DEVICES
-project_name='FlowRL'
+project_name='FlowRL_Scaling'
 exp_name='test-debug'
 
 # Algorithm settings
@@ -29,7 +29,7 @@ clip_ratio_high=0.28
 
 # FlowRL Loss Variant Selection
 # Options: "vanilla" (no TIS/clip), "flowrl_clip" (clip IS only), "flowrl_clip_tis" (both TIS + clip)
-export FLOWRL_LOSS_VARIANT="flowrl_clip"
+# export FLOWRL_LOSS_VARIANT="flowrl_clip"
 
 # Sequence lengths (REDUCED FOR DEBUGGING)
 max_prompt_length=256  # Reduced from 1024 for debugging
@@ -151,13 +151,7 @@ python3 -m recipe.flowrl.main_flowrl \
     trainer.nnodes="${NNODES}" \
     trainer.val_before_train=False \
     trainer.test_freq=10 \
-    trainer.save_freq=50 \
+    trainer.save_freq=5 \
     trainer.total_epochs=1 \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto
-
-# todo: algorithm.tb_coef=${tb_coef} \
-# +actor_rollout_ref.actor.proj_layer=3 \
-#     reward_model.overlong_buffer.enable=${enable_overlong_buffer} \
-#    reward_model.overlong_buffer.len=${overlong_buffer_len} \
-#    reward_model.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
