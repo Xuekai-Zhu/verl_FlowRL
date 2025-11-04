@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL'
-exp_name='FlowRL-cispo-clip-Qwen2.5-7B-1024'
+project_name='FlowRL_Scaling'
+exp_name='FlowRL-cispo-clip-Qwen2.5-7B-1104'
 
 # Algorithm settings
 adv_estimator=grpo
@@ -48,7 +48,7 @@ n_resp_per_prompt=8
 train_prompt_mini_bsz=32
 
 # Checkpoint saving frequency (-1 to disable periodic saves)
-save_freq=-1
+save_freq=50
 
 # Ray
 RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
