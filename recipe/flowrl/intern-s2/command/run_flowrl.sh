@@ -27,7 +27,7 @@ conda activate verl
 cd /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward'
+exp_name='FlowRL-fp16-Qwen2.5-7B-DAPO-Math-prompt-modified-reward'
 output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/$(date +%Y%m%d_%H%M%S)"
 rollout_data_dir="${output_dir}/flowrl_train_results"
 validation_data_dir="${output_dir}/flowrl_val_results"
@@ -193,7 +193,7 @@ ray job submit --address="http://127.0.0.1:$RAY_DASHBOARD_PORT" \
     trainer.nnodes="${NNODES}" \
     trainer.val_before_train=True \
     trainer.test_freq=5 \
-    trainer.save_freq=5 \
+    trainer.save_freq=10 \
     trainer.total_epochs=1 \
     trainer.log_val_generations=1 \
     trainer.default_local_dir=$CKPTS_DIR \

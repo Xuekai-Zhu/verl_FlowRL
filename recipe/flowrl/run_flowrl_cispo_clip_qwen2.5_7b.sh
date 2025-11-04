@@ -2,7 +2,7 @@
 set -xeuo pipefail
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-cispo-clip-Qwen2.5-7B-1104'
+exp_name='FlowRL-fp16-cispo-clip-Qwen2.5-7B-1104'
 
 # Algorithm settings
 adv_estimator=grpo
@@ -19,10 +19,6 @@ kl_loss_coef=0.0
 # DAPO Dual-clip parameters
 clip_ratio_low=0.2
 clip_ratio_high=0.28
-
-# FlowRL Loss Variant Selection
-# Options: "vanilla" (no TIS/clip), "flowrl_clip" (clip IS only), "flowrl_clip_tis" (both TIS + clip)
-export FLOWRL_LOSS_VARIANT="flowrl_cispo"
 
 # Sequence lengths 
 max_prompt_length=$((1024 * 2))
