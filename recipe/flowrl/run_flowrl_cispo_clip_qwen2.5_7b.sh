@@ -110,6 +110,7 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.ppo_mini_batch_size=${train_prompt_mini_bsz} \
     actor_rollout_ref.actor.fsdp_config.param_offload=${offload} \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=${offload} \
+    actor_rollout_ref.actor.fsdp_config.model_dtype=float16 \
     actor_rollout_ref.actor.entropy_coeff=0 \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
@@ -128,7 +129,9 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
     actor_rollout_ref.rollout.val_kwargs.n=1 \
     actor_rollout_ref.rollout.name=vllm \
+    actor_rollout_ref.rollout.dtype=float16 \
     actor_rollout_ref.ref.fsdp_config.param_offload=${offload} \
+    actor_rollout_ref.ref.fsdp_config.model_dtype=float16 \
     actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
     actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
     reward_model.reward_manager=dapo \
