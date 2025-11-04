@@ -88,7 +88,9 @@ class FlowRLActor(DataParallelPPOActor):
 
             multi_modal_inputs = extract_multi_modal_inputs(micro_batch["multi_modal_inputs"])
 
-        with torch.autocast(device_type=self.device_name, dtype=torch.bfloat16):
+        from verl.utils.torch_dtypes import PrecisionType
+        torch_dtype = PrecisionType.to_dtype(self.config.dtype)
+        with torch.autocast(device_type=self.device_name, dtype=torch_dtype):
             input_ids = micro_batch["input_ids"]
             batch_size, seqlen = input_ids.shape
             attention_mask = micro_batch["attention_mask"]
@@ -425,7 +427,12 @@ class FlowRLActor(DataParallelPPOActor):
                         loss = policy_loss * loss_scale_factor
                     else:
                         loss = policy_loss * loss_scale_factor
-                    loss.backward()
+
+                    if self.scaler is not None:
+                        self.scaler.scale(loss).backward()
+                    else:
+                        loss.backward()
+ 
 
                     micro_batch_metrics.update(flowrl_metrics)
                     # micro_batch_metrics.update(
