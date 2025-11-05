@@ -28,4 +28,4 @@ proxy_on
 
 
 # Run the training script
-bash recipe/flowrl/run_flowrl_cispo_clip_qwen2.5_7b.sh
+bash recipe/flowrl/slurm/run_flowrl_cispo_clip_qwen2.5_7b.sh
