@@ -44,7 +44,7 @@ n_resp_per_prompt=8
 train_prompt_mini_bsz=32
 
 # Checkpoint saving frequency (-1 to disable periodic saves)
-save_freq=50
+save_freq=-1
 
 # Ray
 RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
