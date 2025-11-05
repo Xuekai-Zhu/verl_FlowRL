@@ -2,7 +2,7 @@
 set -xeuo pipefail
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-fp16-cispo-clip-Qwen2.5-7B-1104'
+exp_name='FlowRL-fp16-cispo-clip-Qwen2.5-7B-1105'
 
 # Algorithm settings
 adv_estimator=grpo
