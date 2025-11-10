@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=plm
-#SBATCH --job-name=xuekai_flowrl_qwen2.5_7b_1110
+#SBATCH --job-name=xuekai_flowrl_fp16_qwen2.5_7b_1110
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=64
@@ -27,5 +27,5 @@ nvidia-smi
 proxy_on
 
 
-# Run the training script
-bash recipe/flowrl/run_flowrl_qwen2.5_7b.sh
+# Run the FP16 training script
+bash recipe/flowrl/run_flowrl_qwen2.5_7b_fp16.sh

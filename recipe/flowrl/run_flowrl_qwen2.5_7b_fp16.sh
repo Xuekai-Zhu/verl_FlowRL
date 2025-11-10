@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL'
-exp_name='FlowRL-Qwen2.5-7B-FP16'
+project_name='FlowRL_Scaling'
+exp_name='FlowRL-FP16-Qwen2.5-7B-1110'
 
 # Algorithm settings
 adv_estimator=grpo
