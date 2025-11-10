@@ -2,7 +2,7 @@
 set -xeuo pipefail
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-cispo-clip-Qwen2.5-7B-1104'
+exp_name='FlowRL-cispo-clip-ablation-Qwen2.5-7B-1110'
 
 # Algorithm settings
 adv_estimator=grpo
@@ -20,7 +20,10 @@ kl_loss_coef=0.0
 clip_ratio_low=0.2
 clip_ratio_high=0.28
 
-# Sequence lengths 
+# Ablation: Set to true to use only clip (no hard mask), false for default CISPO (hard mask + clip)
+export FLOWRL_CLIP_ABLATION=true
+
+# Sequence lengths
 max_prompt_length=$((1024 * 2))
 max_response_length=$((1024 * 8))
 
