@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=plm
 #SBATCH --job-name=xuekai_flowrl_cispo_clip_ablation_1110
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=64
 #SBATCH --output=logs/%j.out
@@ -26,6 +26,8 @@ nvidia-smi
 
 proxy_on
 
+# Set number of nodes for distributed training
+export NNODES=2
 
 # Run the ablation training script
 bash recipe/flowrl/run_flowrl_cispo_clip_ablation_qwen2.5_7b.sh
