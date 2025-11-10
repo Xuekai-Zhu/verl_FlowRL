@@ -1,5 +1,5 @@
 rjob submit \
---name=flowrl-qwen25-7b-dapo-math-sglang \
+--name=flowrl-qwen25-7b-dapo-math-1109-resume \
 --gpu=8 \
 --memory=1600000 \
 --cpu=128 \

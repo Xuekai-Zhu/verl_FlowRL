@@ -27,8 +27,8 @@ conda activate verl
 cd /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward'
-output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/$(date +%Y%m%d_%H%M%S)"
+exp_name='FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward-resume-from-step-40'
+output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/20251104_071426"
 rollout_data_dir="${output_dir}/flowrl_train_results"
 validation_data_dir="${output_dir}/flowrl_val_results"
 # Use absolute path for checkpoint directory to save in current directory
@@ -38,7 +38,7 @@ export TENSORBOARD_DIR="${output_dir}/tensorboard_log"
 export VERL_FILE_LOGGER_PATH="${output_dir}/log"
 
 # Paths
-MODEL_PATH="/mnt/shared-storage-user/llmit/user/chengguangran/model/cispo-cold-start-model/hf-170"
+MODEL_PATH="/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward/20251104_071426/huggingface/global_step_40_with_proj_z"
 TRAIN_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/recipe/cispo/data/modified-dapo-math-17k.parquet"
 TEST_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/recipe/cispo/data/modified-aime-2024.parquet"
 
@@ -46,7 +46,7 @@ TEST_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/r
 adv_estimator=grpo
 
 # KL settings (ref policy needed for FlowRL)
-use_kl_in_reward=False  
+use_kl_in_reward=False
 kl_coef=0.0
 use_kl_loss=True
 kl_loss_coef=0.0
@@ -65,7 +65,7 @@ overlong_penalty_factor=1.0
 
 ##### DAPO trick: token-level loss
 loss_agg_mode="token-mean"
-##### DAPO trick: Dynamic Sampling 
+##### DAPO trick: Dynamic Sampling
 enable_filter_groups=True
 filter_groups_max_num_gen_batches=10
 filter_groups_metric="acc"

@@ -222,12 +222,17 @@ class FlowRLActorRolloutRefWorker(ActorRolloutRefWorker):
             
             # ==== FlowRL: inject ProjZ BEFORE FSDP wrap ====
             if role == "actor" and self._is_actor:
-                n_dim = actor_module.config.hidden_size
-                proj_layers = getattr(self.config.actor, "proj_layer", 3)
-                actor_module.add_module("proj_z", ProjZModule(n_dim, num_layers=proj_layers))
-                
-                if self.rank == 0:
-                    print(f"[FlowRL] Added proj_z (layers={proj_layers}, hidden={n_dim}) BEFORE FSDP wrap")
+                # Only add proj_z if it doesn't already exist (e.g., when loading from HF checkpoint)
+                if not hasattr(actor_module, "proj_z"):
+                    n_dim = actor_module.config.hidden_size
+                    proj_layers = getattr(self.config.actor, "proj_layer", 3)
+                    actor_module.add_module("proj_z", ProjZModule(n_dim, num_layers=proj_layers))
+
+                    if self.rank == 0:
+                        print(f"[FlowRL] Added proj_z (layers={proj_layers}, hidden={n_dim}) BEFORE FSDP wrap")
+                else:
+                    if self.rank == 0:
+                        print(f"[FlowRL] proj_z already exists in model, skipping injection (loaded from checkpoint)")
             # ===============================================
 
             # Apply Liger kernel to the model if use_liger is set to True
