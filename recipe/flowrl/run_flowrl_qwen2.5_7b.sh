@@ -2,7 +2,7 @@
 set -xeuo pipefail
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-1110'
+exp_name='FlowRL-main-Qwen2.5-7B-1110'
 
 # Algorithm settings
 adv_estimator=grpo
@@ -100,7 +100,7 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.entropy_coeff=0 \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.calculate_log_probs=True \
+    actor_rollout_ref.rollout.calculate_log_probs=False \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \
