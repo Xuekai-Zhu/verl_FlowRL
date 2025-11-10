@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=plm
 #SBATCH --job-name=xuekai_flowrl_cispo_clip_ablation_1110
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=64
 #SBATCH --output=logs/%j.out
