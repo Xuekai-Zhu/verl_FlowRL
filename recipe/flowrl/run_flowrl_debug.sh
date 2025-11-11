@@ -74,6 +74,9 @@ python3 -m recipe.flowrl.main_flowrl \
     algorithm.adv_estimator=${adv_estimator} \
     algorithm.use_kl_in_reward=${use_kl_in_reward} \
     algorithm.kl_ctrl.kl_coef=${kl_coef} \
+    actor_rollout_ref.actor.dtype=float16 \
+    actor_rollout_ref.ref.dtype=float16 \
+    actor_rollout_ref.rollout.dtype=float16 \
     actor_rollout_ref.actor.use_kl_loss=${use_kl_loss} \
     actor_rollout_ref.actor.kl_loss_coef=${kl_loss_coef} \
     actor_rollout_ref.actor.clip_ratio_low=${clip_ratio_low} \
