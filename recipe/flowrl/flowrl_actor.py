@@ -307,7 +307,7 @@ class FlowRLActor(DataParallelPPOActor):
         ]
         if self.config.use_kl_loss:
             select_keys.append("ref_log_prob")
-        if self.config.tis_imp_ratio_cap > 0:
+        if getattr(self.config, "tis_imp_ratio_cap", 0) > 0:
             assert "rollout_log_probs" in data.batch.keys(), (
                 "Truncated Importance Sampling (TIS) requires to configure "
                 "`actor_rollout_ref.rollout.calculate_log_probs=True` "
@@ -346,7 +346,7 @@ class FlowRLActor(DataParallelPPOActor):
                     model_inputs = {**micro_batch.batch, **micro_batch.non_tensor_batch}
                     response_mask = model_inputs["response_mask"]
                     old_log_prob = model_inputs["old_log_probs"]
-                    rollout_log_probs = model_inputs["rollout_log_probs"] if self.config.tis_imp_ratio_cap > 0 else None
+                    rollout_log_probs = model_inputs["rollout_log_probs"] if getattr(self.config, "tis_imp_ratio_cap", 0) > 0 else None
                     advantages = model_inputs["advantages"]
                     ref_log_prob = model_inputs["ref_log_prob"]
 
