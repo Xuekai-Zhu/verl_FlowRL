@@ -23,8 +23,9 @@ max_prompt_length=$((1024 * 1))
 max_response_length=$((1024 * 2))
 
 # Overlong buffer for very long responses
-enable_overlong_buffer=True
-overlong_buffer_len=$((1024 * 4))
+# Disabled for debug to avoid buffer_len > max_response_length error
+enable_overlong_buffer=False
+overlong_buffer_len=$((1024 * 1))
 overlong_penalty_factor=1.0
 
 # Batch sizes
