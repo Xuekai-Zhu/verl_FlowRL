@@ -28,7 +28,7 @@ cd /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL
 
 project_name='FlowRL_Scaling'
 exp_name='FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward-1110'
-output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/20251110_055053"
+output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/$(date +%Y%m%d_%H%M%S)"
 rollout_data_dir="${output_dir}/flowrl_train_results"
 validation_data_dir="${output_dir}/flowrl_val_results"
 # Use absolute path for checkpoint directory to save in current directory
@@ -70,7 +70,7 @@ enable_filter_groups=True
 filter_groups_max_num_gen_batches=10
 filter_groups_metric="acc"
 
-train_prompt_bsz=512 #16
+train_prompt_bsz=128 #16
 gen_prompt_bsz=$((train_prompt_bsz * 3))
 train_prompt_mini_bsz=32 # 8
 n_resp_per_prompt=16 # 8

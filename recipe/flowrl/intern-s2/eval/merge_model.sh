@@ -6,9 +6,9 @@ set -x
 # ============================================
 BACKEND="${BACKEND:-fsdp}"
 # Your checkpoint from 32 GPU training
-LOCAL_DIR="${LOCAL_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward/20251104_071426/ckpts/global_step_40/actor}"
+LOCAL_DIR="${LOCAL_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward-1110/20251110_055053/ckpts/global_step_90/actor}"
 # Where to save the merged HuggingFace model
-TARGET_DIR="${TARGET_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward/20251104_071426/huggingface/global_step_40}"
+TARGET_DIR="${TARGET_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward-1110/20251110_055053/huggingface/global_step_90}"
 # ============================================
 
 TARGET_DIR_WITH_PROJ_Z="${TARGET_DIR}_with_proj_z"

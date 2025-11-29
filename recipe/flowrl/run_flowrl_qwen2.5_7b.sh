@@ -2,7 +2,7 @@
 set -xeuo pipefail
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-cispo-clip-ablation-Qwen2.5-7B-1110'
+exp_name='FlowRL-Qwen2.5-7B-1128'
 
 # Algorithm settings
 adv_estimator=grpo
@@ -41,7 +41,7 @@ filter_groups_metric=acc
 max_num_gen_batches=10
 
 # Batch sizes
-train_prompt_bsz=512
+train_prompt_bsz=128
 gen_prompt_bsz=$((train_prompt_bsz * 3))
 n_resp_per_prompt=8
 train_prompt_mini_bsz=32

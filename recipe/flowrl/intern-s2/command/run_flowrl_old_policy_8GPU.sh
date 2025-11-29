@@ -21,14 +21,17 @@ export RAY_HEAD_PORT=${RAY_HEAD_PORT:-"6390"}
 export RAY_CLIENT_PORT=${RAY_CLIENT_PORT:-"10001"}
 export RAY_DASHBOARD_PORT=${RAY_DASHBOARD_PORT:-"8266"}
 
+# FlowRL objective: use old_policy instead of vanilla (reference policy)
+export FLOWRL_OBJECTIVE=old_policy
+
 cd /mnt/shared-storage-user/llmit/user/chengguangran/miniconda3/etc/profile.d
 source conda.sh
 conda activate verl
 cd /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward-1110'
-output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/20251110_055053"
+exp_name='FlowRL-Qwen2.5-7B-DAPO-Math-prompt-modified-reward-old-policy-1129'
+output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/$(date +%Y%m%d_%H%M%S)"
 rollout_data_dir="${output_dir}/flowrl_train_results"
 validation_data_dir="${output_dir}/flowrl_val_results"
 # Use absolute path for checkpoint directory to save in current directory
@@ -46,7 +49,7 @@ TEST_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/r
 adv_estimator=grpo
 
 # KL settings (ref policy needed for FlowRL)
-use_kl_in_reward=False  
+use_kl_in_reward=False
 kl_coef=0.0
 use_kl_loss=True
 kl_loss_coef=0.0
@@ -65,12 +68,12 @@ overlong_penalty_factor=1.0
 
 ##### DAPO trick: token-level loss
 loss_agg_mode="token-mean"
-##### DAPO trick: Dynamic Sampling 
+##### DAPO trick: Dynamic Sampling
 enable_filter_groups=True
 filter_groups_max_num_gen_batches=10
 filter_groups_metric="acc"
 
-train_prompt_bsz=512 #16
+train_prompt_bsz=128 #16
 gen_prompt_bsz=$((train_prompt_bsz * 3))
 train_prompt_mini_bsz=32 # 8
 n_resp_per_prompt=16 # 8
