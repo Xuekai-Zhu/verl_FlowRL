@@ -424,9 +424,19 @@ class FlowRLActor(DataParallelPPOActor):
                             response_mask=response_mask,
                             clip_ratio=self.config.clip_ratio,
                             rollout_log_probs=rollout_log_probs)
+                    elif flowrl_objective == 'old_policy_no_log_z':
+                        # FlowRL using old policy and without log Z (combined ablation)
+                        policy_loss, flowrl_metrics = self.compute_flowrl_old_policy_no_log_z(
+                            log_prob=log_prob,
+                            ref_log_prob=ref_log_prob,
+                            old_log_prob=old_log_prob,
+                            reward=advantages,
+                            response_mask=response_mask,
+                            clip_ratio=self.config.clip_ratio,
+                            rollout_log_probs=rollout_log_probs)
                     else:
                         raise ValueError(f"Unknown FLOWRL_OBJECTIVE: {flowrl_objective}. "
-                                       f"Supported values: 'vanilla', 'old_policy', 'no_log_z'")
+                                       f"Supported values: 'vanilla', 'old_policy', 'no_log_z', 'old_policy_no_log_z'")
 
                     # if entropy_coeff != 0:
                     #     entropy_loss = agg_loss(loss_mat=entropy, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
@@ -602,6 +612,61 @@ class FlowRLActor(DataParallelPPOActor):
 
         # FlowRL residual WITHOUT log_z: logpf - β*R - logpref
         delta = avg_log_prob - self.flowrl_beta_coef * seq_log_reward - avg_ref_log_prob
+
+        # Importance ratio from current vs old policy
+        log_w = verl_F.masked_sum(log_prob - old_log_prob, response_mask, axis=1)
+        imp_w_raw = torch.exp(log_w).detach()
+        imp_w = torch.clamp(imp_w_raw, max=10)
+
+        # Loss: weighted squared residual with clipped importance weights
+        weighted_losses = imp_w * (delta ** 2)
+        avg_loss = torch.mean(weighted_losses)
+
+        # KL divergences
+        negative_approx_kl = log_prob - old_log_prob
+        ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
+        approx_kl_ref = log_prob - ref_log_prob
+        ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
+
+        # Metrics (no log_z in this version)
+        loss_term_dict = {
+            "actor/log_prob": verl_F.masked_mean(log_prob, response_mask).detach().item(),
+            "actor/old_log_prob": verl_F.masked_mean(old_log_prob, response_mask).detach().item(),
+            "actor/ref_log_prob": verl_F.masked_mean(ref_log_prob, response_mask).detach().item(),
+            "actor/log_reward": verl_F.masked_mean(reward, response_mask).detach().item(),
+            "actor/final_loss": avg_loss.detach().item(),
+            "actor/importance_weight": imp_w.mean().detach().item(),
+            "actor/ppo_kl": ppo_kl.detach().item(),
+            "actor/ref_kl": ref_kl.detach().item(),
+        }
+
+        return avg_loss, loss_term_dict
+
+
+    def compute_flowrl_old_policy_no_log_z(self,
+                                log_prob=None,
+                                ref_log_prob=None,
+                                old_log_prob=None,
+                                reward=None,
+                                response_mask=None,
+                                clip_ratio=None,
+                                rollout_log_probs=None):
+        """
+        FlowRL objective using OLD POLICY and WITHOUT log Z (combined ablation).
+
+        This version combines two modifications:
+        1. Uses old policy instead of reference policy
+        2. Removes the partition function estimation from the objective
+
+        Residual: logpf - β*R - log_old
+        """
+        # Average token log-probs & rewards over valid positions
+        avg_log_prob = verl_F.masked_mean(log_prob, response_mask, axis=1)
+        avg_old_log_prob = verl_F.masked_mean(old_log_prob, response_mask, axis=1)
+        seq_log_reward = verl_F.masked_mean(reward, response_mask, axis=1)
+
+        # FlowRL residual WITHOUT log_z and using old policy: logpf - β*R - log_old
+        delta = avg_log_prob - self.flowrl_beta_coef * seq_log_reward - avg_old_log_prob
 
         # Importance ratio from current vs old policy
         log_w = verl_F.masked_sum(log_prob - old_log_prob, response_mask, axis=1)

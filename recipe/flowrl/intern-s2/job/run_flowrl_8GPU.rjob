@@ -1,5 +1,5 @@
 rjob submit \
---name=flowrl-qwen25-7b-dapo-math-1130-no-log-z \
+--name=flowrl-qwen25-7b-oldpolicy-nologz-nostdnorm \
 --gpu=8 \
 --memory=1600000 \
 --cpu=128 \
@@ -15,4 +15,4 @@ rjob submit \
 -e DISTRIBUTED_JOB=true \
  --custom-resources rdma/mlnx_shared=8 \
 --custom-resources mellanox.com/mlnx_rdma=1 \
--- bash /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/recipe/flowrl/intern-s2/command/run_flowrl_no_log_z_8GPU.sh
+-- bash /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/recipe/flowrl/intern-s2/command/run_flowrl_old_policy_no_log_z_no_std_norm_8GPU.sh
