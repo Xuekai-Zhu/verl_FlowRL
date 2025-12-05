@@ -21,6 +21,9 @@ export RAY_HEAD_PORT=${RAY_HEAD_PORT:-"6390"}
 export RAY_CLIENT_PORT=${RAY_CLIENT_PORT:-"10001"}
 export RAY_DASHBOARD_PORT=${RAY_DASHBOARD_PORT:-"8266"}
 
+# FlowRL objective: old_policy_no_log_z (combined ablation study)
+export FLOWRL_OBJECTIVE=old_policy_no_log_z
+
 cd /mnt/shared-storage-user/llmit/user/chengguangran/miniconda3/etc/profile.d
 source conda.sh
 conda activate verl
@@ -44,6 +47,8 @@ TEST_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/r
 
 # Algorithm settings
 adv_estimator=grpo
+# NEW: Disable standard deviation normalization in GRPO (Dr.GRPO style)
+norm_adv_by_std_in_grpo=False
 
 # KL settings (ref policy needed for FlowRL)
 use_kl_in_reward=False  
@@ -133,6 +138,7 @@ ray job submit --address="http://127.0.0.1:$RAY_DASHBOARD_PORT" \
     data.train_batch_size=${train_prompt_bsz} \
     actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
     algorithm.adv_estimator=${adv_estimator} \
+    algorithm.norm_adv_by_std_in_grpo=${norm_adv_by_std_in_grpo} \
     algorithm.use_kl_in_reward=${use_kl_in_reward} \
     algorithm.kl_ctrl.kl_coef=${kl_coef} \
     actor_rollout_ref.actor.policy_loss.loss_mode=${policy_loss_mode} \
