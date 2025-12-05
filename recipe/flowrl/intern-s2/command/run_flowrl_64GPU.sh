@@ -45,7 +45,7 @@ TEST_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/r
 # Algorithm settings
 adv_estimator=grpo
 
-# KL settings (ref policy needed for FlowRL)
+# KL settings
 use_kl_in_reward=False  
 kl_coef=0.0
 use_kl_loss=True

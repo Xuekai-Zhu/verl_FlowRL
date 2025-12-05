@@ -50,7 +50,7 @@ adv_estimator=grpo
 # NEW: Disable standard deviation normalization in GRPO (Dr.GRPO style)
 norm_adv_by_std_in_grpo=False
 
-# KL settings (ref policy needed for FlowRL)
+# KL settings
 use_kl_in_reward=False
 kl_coef=0.0
 use_kl_loss=True
