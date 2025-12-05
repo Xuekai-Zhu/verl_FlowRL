@@ -137,20 +137,23 @@ def compute_flowrl_with_old_policy(
     # KL divergences
     negative_approx_kl = log_prob - old_log_prob
     ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
-    approx_kl_ref = log_prob - ref_log_prob
-    ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
 
     # Metrics
     loss_term_dict = {
         "actor/log_prob": verl_F.masked_mean(log_prob, response_mask).detach().item(),
         "actor/old_log_prob": verl_F.masked_mean(old_log_prob, response_mask).detach().item(),
-        "actor/ref_log_prob": verl_F.masked_mean(ref_log_prob, response_mask).detach().item(),
         "actor/log_reward": verl_F.masked_mean(reward, response_mask).detach().item(),
         "actor/final_loss": avg_loss.detach().item(),
         "actor/importance_weight": imp_w.mean().detach().item(),
         "actor/ppo_kl": ppo_kl.detach().item(),
-        "actor/ref_kl": ref_kl.detach().item(),
     }
+
+    # Only compute ref_kl if ref_log_prob is provided
+    if ref_log_prob is not None:
+        approx_kl_ref = log_prob - ref_log_prob
+        ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
+        loss_term_dict["actor/ref_log_prob"] = verl_F.masked_mean(ref_log_prob, response_mask).detach().item()
+        loss_term_dict["actor/ref_kl"] = ref_kl.detach().item()
 
     return avg_loss, loss_term_dict
 
@@ -274,19 +277,22 @@ def compute_flowrl_old_policy_no_log_z(
     # KL divergences
     negative_approx_kl = log_prob - old_log_prob
     ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
-    approx_kl_ref = log_prob - ref_log_prob
-    ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
 
     # Metrics (no log_z in this version)
     loss_term_dict = {
         "actor/log_prob": verl_F.masked_mean(log_prob, response_mask).detach().item(),
         "actor/old_log_prob": verl_F.masked_mean(old_log_prob, response_mask).detach().item(),
-        "actor/ref_log_prob": verl_F.masked_mean(ref_log_prob, response_mask).detach().item(),
         "actor/log_reward": verl_F.masked_mean(reward, response_mask).detach().item(),
         "actor/final_loss": avg_loss.detach().item(),
         "actor/importance_weight": imp_w.mean().detach().item(),
         "actor/ppo_kl": ppo_kl.detach().item(),
-        "actor/ref_kl": ref_kl.detach().item(),
     }
+
+    # Only compute ref_kl if ref_log_prob is provided
+    if ref_log_prob is not None:
+        approx_kl_ref = log_prob - ref_log_prob
+        ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
+        loss_term_dict["actor/ref_log_prob"] = verl_F.masked_mean(ref_log_prob, response_mask).detach().item()
+        loss_term_dict["actor/ref_kl"] = ref_kl.detach().item()
 
     return avg_loss, loss_term_dict
