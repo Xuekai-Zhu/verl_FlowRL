@@ -90,7 +90,6 @@ def compute_flowrl(
 
 def compute_flowrl_with_old_policy(
     log_prob=None,
-    ref_log_prob=None,
     old_log_prob=None,
     reward=None,
     response_mask=None,
@@ -105,7 +104,6 @@ def compute_flowrl_with_old_policy(
 
     Args:
         log_prob: Current policy log probabilities (bs, response_len)
-        ref_log_prob: Reference policy log probabilities (bs, response_len) - used for KL metrics only
         old_log_prob: Old policy log probabilities (bs, response_len)
         reward: Rewards (bs, response_len)
         response_mask: Mask for valid tokens (bs, response_len)
@@ -134,7 +132,7 @@ def compute_flowrl_with_old_policy(
     weighted_losses = imp_w * (delta ** 2)
     avg_loss = torch.mean(weighted_losses)
 
-    # KL divergences
+    # KL divergences (only old policy KL, no ref policy)
     negative_approx_kl = log_prob - old_log_prob
     ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
 
@@ -147,13 +145,6 @@ def compute_flowrl_with_old_policy(
         "actor/importance_weight": imp_w.mean().detach().item(),
         "actor/ppo_kl": ppo_kl.detach().item(),
     }
-
-    # Only compute ref_kl if ref_log_prob is provided
-    if ref_log_prob is not None:
-        approx_kl_ref = log_prob - ref_log_prob
-        ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
-        loss_term_dict["actor/ref_log_prob"] = verl_F.masked_mean(ref_log_prob, response_mask).detach().item()
-        loss_term_dict["actor/ref_kl"] = ref_kl.detach().item()
 
     return avg_loss, loss_term_dict
 
@@ -228,7 +219,6 @@ def compute_flowrl_no_log_z(
 
 def compute_flowrl_old_policy_no_log_z(
     log_prob=None,
-    ref_log_prob=None,
     old_log_prob=None,
     reward=None,
     response_mask=None,
@@ -245,7 +235,6 @@ def compute_flowrl_old_policy_no_log_z(
 
     Args:
         log_prob: Current policy log probabilities (bs, response_len)
-        ref_log_prob: Reference policy log probabilities (bs, response_len) - used for KL metrics only
         old_log_prob: Old policy log probabilities (bs, response_len)
         reward: Rewards (bs, response_len)
         response_mask: Mask for valid tokens (bs, response_len)
@@ -274,11 +263,11 @@ def compute_flowrl_old_policy_no_log_z(
     weighted_losses = imp_w * (delta ** 2)
     avg_loss = torch.mean(weighted_losses)
 
-    # KL divergences
+    # KL divergences (only old policy KL, no ref policy)
     negative_approx_kl = log_prob - old_log_prob
     ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
 
-    # Metrics (no log_z in this version)
+    # Metrics (no log_z, no ref_log_prob in this version)
     loss_term_dict = {
         "actor/log_prob": verl_F.masked_mean(log_prob, response_mask).detach().item(),
         "actor/old_log_prob": verl_F.masked_mean(old_log_prob, response_mask).detach().item(),
@@ -287,12 +276,5 @@ def compute_flowrl_old_policy_no_log_z(
         "actor/importance_weight": imp_w.mean().detach().item(),
         "actor/ppo_kl": ppo_kl.detach().item(),
     }
-
-    # Only compute ref_kl if ref_log_prob is provided
-    if ref_log_prob is not None:
-        approx_kl_ref = log_prob - ref_log_prob
-        ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
-        loss_term_dict["actor/ref_log_prob"] = verl_F.masked_mean(ref_log_prob, response_mask).detach().item()
-        loss_term_dict["actor/ref_kl"] = ref_kl.detach().item()
 
     return avg_loss, loss_term_dict

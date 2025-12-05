@@ -151,7 +151,6 @@ class FlowRLActor(DataParallelPPOActor):
                     elif flowrl_objective == 'old_policy':
                         policy_loss, flowrl_metrics = compute_flowrl_with_old_policy(
                             log_prob=log_prob,
-                            ref_log_prob=ref_log_prob,
                             old_log_prob=old_log_prob,
                             reward=advantages,
                             response_mask=response_mask,
@@ -169,7 +168,6 @@ class FlowRLActor(DataParallelPPOActor):
                     elif flowrl_objective == 'old_policy_no_log_z':
                         policy_loss, flowrl_metrics = compute_flowrl_old_policy_no_log_z(
                             log_prob=log_prob,
-                            ref_log_prob=ref_log_prob,
                             old_log_prob=old_log_prob,
                             reward=advantages,
                             response_mask=response_mask,
