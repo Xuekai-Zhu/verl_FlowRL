@@ -24,14 +24,14 @@ import verl.utils.torch_functional as verl_F
 
 
 def compute_flowrl(
-    log_prob,
-    ref_log_prob,
-    old_log_prob,
-    reward,
-    response_mask,
+    log_prob=None,
+    ref_log_prob=None,
+    old_log_prob=None,
+    reward=None,
+    response_mask=None,
     beta_coef=15.0,
     clip_ratio=None,
-    rollout_log_probs=None
+    rollout_log_probs=None,
 ):
     """
     FlowRL objective with importance weight clipping (max=10), using reference policy.
@@ -89,14 +89,14 @@ def compute_flowrl(
 
 
 def compute_flowrl_with_old_policy(
-    log_prob,
-    ref_log_prob,
-    old_log_prob,
-    reward,
-    response_mask,
+    log_prob=None,
+    ref_log_prob=None,
+    old_log_prob=None,
+    reward=None,
+    response_mask=None,
     beta_coef=15.0,
     clip_ratio=None,
-    rollout_log_probs=None
+    rollout_log_probs=None,
 ):
     """
     FlowRL objective using OLD POLICY instead of reference policy.
@@ -159,14 +159,14 @@ def compute_flowrl_with_old_policy(
 
 
 def compute_flowrl_no_log_z(
-    log_prob,
-    ref_log_prob,
-    old_log_prob,
-    reward,
-    response_mask,
+    log_prob=None,
+    ref_log_prob=None,
+    old_log_prob=None,
+    reward=None,
+    response_mask=None,
     beta_coef=15.0,
     clip_ratio=None,
-    rollout_log_probs=None
+    rollout_log_probs=None,
 ):
     """
     FlowRL objective WITHOUT log Z (ablation study).
@@ -227,14 +227,14 @@ def compute_flowrl_no_log_z(
 
 
 def compute_flowrl_old_policy_no_log_z(
-    log_prob,
-    ref_log_prob,
-    old_log_prob,
-    reward,
-    response_mask,
+    log_prob=None,
+    ref_log_prob=None,
+    old_log_prob=None,
+    reward=None,
+    response_mask=None,
     beta_coef=15.0,
     clip_ratio=None,
-    rollout_log_probs=None
+    rollout_log_probs=None,
 ):
     """
     FlowRL objective using OLD POLICY and WITHOUT log Z (combined ablation).
