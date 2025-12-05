@@ -108,7 +108,12 @@ class FlowRLActor(DataParallelPPOActor):
                     response_mask = model_inputs["response_mask"]
                     old_log_prob = model_inputs["old_log_probs"]
                     advantages = model_inputs["advantages"]
-                    ref_log_prob = model_inputs["ref_log_prob"]
+
+                    # Only get ref_log_prob if use_kl_loss is True
+                    if self.config.use_kl_loss:
+                        ref_log_prob = model_inputs["ref_log_prob"]
+                    else:
+                        ref_log_prob = None
 
                     entropy_coeff = self.config.entropy_coeff
                     loss_agg_mode = self.config.loss_agg_mode
