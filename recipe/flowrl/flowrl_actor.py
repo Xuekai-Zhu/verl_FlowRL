@@ -24,12 +24,12 @@ from verl.workers.actor.dp_actor import DataParallelPPOActor
 from verl.utils.py_functional import append_to_dict
 
 # Import FlowRL objective functions
-from recipe.flowrl.flowrl_objectives import (
-    compute_flowrl,
-    compute_flowrl_with_old_policy,
-    compute_flowrl_no_log_z,
-    compute_flowrl_old_policy_no_log_z,
-)
+# from recipe.flowrl.flowrl_objectives import (
+#     compute_flowrl,
+#     compute_flowrl_with_old_policy,
+#     compute_flowrl_no_log_z,
+# )
+from recipe.flowrl.flowrl_objectives import compute_flowrl_old_policy_no_log_z
 
 
 class FlowRLActor(DataParallelPPOActor):
@@ -136,46 +136,23 @@ class FlowRLActor(DataParallelPPOActor):
                     else:
                         old_log_prob = model_inputs["old_log_probs"]
 
-                    # ==== FlowRL: Use FlowRL objectives instead of PPO loss ====
-                    flowrl_objective = os.getenv('FLOWRL_OBJECTIVE', 'vanilla')
+                    # ==== FlowRL: Use FlowRL trajectory balance objective ====
+                    # flowrl_objective = os.getenv('FLOWRL_OBJECTIVE', 'old_policy_no_log_z')
+                    # if flowrl_objective == 'vanilla':
+                    #     policy_loss, flowrl_metrics = compute_flowrl(...)
+                    # elif flowrl_objective == 'old_policy':
+                    #     policy_loss, flowrl_metrics = compute_flowrl_with_old_policy(...)
+                    # elif flowrl_objective == 'no_log_z':
+                    #     policy_loss, flowrl_metrics = compute_flowrl_no_log_z(...)
 
-                    if flowrl_objective == 'vanilla':
-                        policy_loss, flowrl_metrics = compute_flowrl(
-                            log_prob=log_prob,
-                            ref_log_prob=ref_log_prob,
-                            old_log_prob=old_log_prob,
-                            reward=advantages,
-                            response_mask=response_mask,
-                            beta_coef=self.flowrl_beta_coef,
-                        )
-                    elif flowrl_objective == 'old_policy':
-                        policy_loss, flowrl_metrics = compute_flowrl_with_old_policy(
-                            log_prob=log_prob,
-                            old_log_prob=old_log_prob,
-                            reward=advantages,
-                            response_mask=response_mask,
-                            beta_coef=self.flowrl_beta_coef,
-                        )
-                    elif flowrl_objective == 'no_log_z':
-                        policy_loss, flowrl_metrics = compute_flowrl_no_log_z(
-                            log_prob=log_prob,
-                            ref_log_prob=ref_log_prob,
-                            old_log_prob=old_log_prob,
-                            reward=advantages,
-                            response_mask=response_mask,
-                            beta_coef=self.flowrl_beta_coef,
-                        )
-                    elif flowrl_objective == 'old_policy_no_log_z':
-                        policy_loss, flowrl_metrics = compute_flowrl_old_policy_no_log_z(
-                            log_prob=log_prob,
-                            old_log_prob=old_log_prob,
-                            reward=advantages,
-                            response_mask=response_mask,
-                            beta_coef=self.flowrl_beta_coef,
-                        )
-                    else:
-                        raise ValueError(f"Unknown FLOWRL_OBJECTIVE: {flowrl_objective}. "
-                                       f"Supported values: 'vanilla', 'old_policy', 'no_log_z', 'old_policy_no_log_z'")
+                    # Use old_policy_no_log_z as default objective
+                    policy_loss, flowrl_metrics = compute_flowrl_old_policy_no_log_z(
+                        log_prob=log_prob,
+                        old_log_prob=old_log_prob,
+                        reward=advantages,
+                        response_mask=response_mask,
+                        beta_coef=self.flowrl_beta_coef,
+                    )
 
                     loss = policy_loss * loss_scale_factor
                     loss.backward()
