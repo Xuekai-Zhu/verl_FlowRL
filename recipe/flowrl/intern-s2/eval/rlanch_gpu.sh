@@ -1,6 +1,10 @@
-rlaunch --gpu=4 \
---memory=160000 \
+#!/bin/bash
+# Launch merge model job with rlaunch
+# Edit configuration in merge_model.sh
+
+rlaunch --gpu=2 \
 --cpu=64 \
+--memory=160000 \
 --charged-group=llmit_gpu \
 --private-machine=yes \
 --mount=gpfs://gpfs1/llmit:/mnt/shared-storage-user/llmit \
