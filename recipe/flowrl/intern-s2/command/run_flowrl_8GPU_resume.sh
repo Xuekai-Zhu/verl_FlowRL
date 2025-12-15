@@ -27,8 +27,8 @@ conda activate verl
 cd /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-old-policy-no-log-z-no-std-norm-1201'
-output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/20251201_162458"
+exp_name='FlowRL-Qwen2.5-7B-old-policy-no-log-z-no-std-norm-resume75'
+output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/$(date +%Y%m%d_%H%M%S)"
 rollout_data_dir="${output_dir}/flowrl_train_results"
 validation_data_dir="${output_dir}/flowrl_val_results"
 # Use absolute path for checkpoint directory to save in current directory
@@ -38,7 +38,7 @@ export TENSORBOARD_DIR="${output_dir}/tensorboard_log"
 export VERL_FILE_LOGGER_PATH="${output_dir}/log"
 
 # Paths
-MODEL_PATH="/mnt/shared-storage-user/llmit/user/chengguangran/model/cispo-cold-start-model/hf-170"
+MODEL_PATH="/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-old-policy-no-log-z-no-std-norm-1201/20251201_162458/huggingface/global_step_75"
 TRAIN_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/recipe/cispo/data/modified-dapo-math-17k.parquet"
 TEST_FILE="/mnt/shared-storage-user/llmit/user/chengguangran/projects/verl-cgr/recipe/cispo/data/modified-aime-2024.parquet"
 

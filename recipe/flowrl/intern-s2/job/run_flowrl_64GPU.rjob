@@ -1,5 +1,5 @@
 rjob submit \
---name=flowrl-qwen25-7b-dapo-math-v1208 \
+--name=flowrl-wo-old-v1215 \
 --gpu=8 \
 --memory=1600000 \
 --cpu=128 \
@@ -15,4 +15,4 @@ rjob submit \
 -e DISTRIBUTED_JOB=true \
  --custom-resources rdma/mlnx_shared=8 \
 --custom-resources mellanox.com/mlnx_rdma=1 \
--- bash /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/recipe/flowrl/intern-s2/command/run_flowrl_64GPU_v1208.sh
+-- bash /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/recipe/flowrl/intern-s2/command/run_flowrl_64GPU_v1215.sh
