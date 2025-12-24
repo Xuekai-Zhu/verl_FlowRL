@@ -27,7 +27,7 @@ conda activate verl
 cd /mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL
 
 project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-wo-old-1215'
+exp_name='FlowRL-Qwen2.5-7B-token-level-1221'
 output_dir="${PWD}/work_dirs/${project_name}/${exp_name}/$(date +%Y%m%d_%H%M%S)"
 rollout_data_dir="${output_dir}/flowrl_train_results"
 validation_data_dir="${output_dir}/flowrl_val_results"

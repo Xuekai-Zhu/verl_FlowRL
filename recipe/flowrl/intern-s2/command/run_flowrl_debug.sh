@@ -68,7 +68,7 @@ enable_overlong_buffer=True
 overlong_buffer_len=$((1024 * 1))  # 1024 (reduced for debug, must be < max_response_length)
 overlong_penalty_factor=1.0
 
-##### DAPO trick: token-level loss
+##### DAPO trick: token-level loss (CISPO-style: average over all tokens)
 loss_agg_mode="token-mean"
 ##### DAPO trick: Dynamic Sampling
 enable_filter_groups=False  # Disabled for faster debugging

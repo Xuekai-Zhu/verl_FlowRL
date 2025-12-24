@@ -29,7 +29,7 @@ from verl.utils.py_functional import append_to_dict
 #     compute_flowrl_with_old_policy,
 #     compute_flowrl_no_log_z,
 # )
-from recipe.flowrl.flowrl_objectives import compute_flowrl_old_policy_no_log_z
+from recipe.flowrl.flowrl_objectives import compute_flowrl_old_policy_no_log_z_token_level
 
 
 class FlowRLActor(DataParallelPPOActor):
@@ -145,8 +145,8 @@ class FlowRLActor(DataParallelPPOActor):
                     # elif flowrl_objective == 'no_log_z':
                     #     policy_loss, flowrl_metrics = compute_flowrl_no_log_z(...)
 
-                    # Use old_policy_no_log_z as default objective
-                    policy_loss, flowrl_metrics = compute_flowrl_old_policy_no_log_z(
+                    # Use old_policy_no_log_z_token_level as default objective
+                    policy_loss, flowrl_metrics = compute_flowrl_old_policy_no_log_z_token_level(
                         log_prob=log_prob,
                         old_log_prob=old_log_prob,
                         reward=advantages,
