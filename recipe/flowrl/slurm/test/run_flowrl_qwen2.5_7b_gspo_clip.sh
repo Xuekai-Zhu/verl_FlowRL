@@ -1,29 +1,34 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-1128'
+project_name='FlowRL'
+exp_name='FlowRL-gspo-clip-Qwen2.5-7B-1012'
 
 # Algorithm settings
 adv_estimator=grpo
 
 # KL settings (ref policy needed for FlowRL, but KL penalty disabled)
-use_kl_in_reward=False  # Enable ref policy for ref_log_prob (needed for FlowRL loss)
+use_kl_in_reward=True  # Enable ref policy for ref_log_prob (needed for FlowRL loss)
 kl_coef=0.0
-use_kl_loss=True
+use_kl_loss=False
 kl_loss_coef=0.0
 
 # FlowRL trajectory balance coefficient
 # TODO: tb_coef=15.0
 
-# DAPO Dual-clip parameters
-clip_ratio_low=0.2
-clip_ratio_high=0.28
+# TIS - Truncated Importance Sampling
+tis_imp_ratio_cap=2.0
 
-# Ablation: Set to true to use only clip (no hard mask), false for default CISPO (hard mask + clip)
-export FLOWRL_CLIP_ABLATION=true
+# GSPO Dual-clip parameters (tiny for GSPO's hybrid ratio)
+clip_ratio_low=0.0003
+clip_ratio_high=0.0004
 
-# Sequence lengths
+# FlowRL Loss Variant Selection
+# Options: "vanilla" (no TIS/clip), "clip_only" (clip IS only), "gspo_clip" (GSPO-style selective clipping), "tis_clip" (both TIS + clip)
+loss_variant="gspo_clip"
+export FLOWRL_LOSS_VARIANT=${loss_variant}
+
+# Sequence lengths 
 max_prompt_length=$((1024 * 2))
 max_response_length=$((1024 * 8))
 
@@ -41,13 +46,10 @@ filter_groups_metric=acc
 max_num_gen_batches=10
 
 # Batch sizes
-train_prompt_bsz=128
+train_prompt_bsz=512  
 gen_prompt_bsz=$((train_prompt_bsz * 3))
 n_resp_per_prompt=8
 train_prompt_mini_bsz=32
-
-# Checkpoint saving frequency (-1 to disable periodic saves)
-save_freq=-1
 
 # Ray
 RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
@@ -117,7 +119,8 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.calculate_log_probs=False \
+    actor_rollout_ref.actor.tis_imp_ratio_cap=${tis_imp_ratio_cap} \
+    actor_rollout_ref.rollout.calculate_log_probs=True \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \
@@ -145,7 +148,7 @@ python3 -m recipe.flowrl.main_flowrl \
     trainer.nnodes="${NNODES}" \
     trainer.val_before_train=True \
     trainer.test_freq=10 \
-    trainer.save_freq=${save_freq} \
+    trainer.save_freq=50 \
     trainer.total_epochs=1 \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto

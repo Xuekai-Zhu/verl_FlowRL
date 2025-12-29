@@ -1,27 +1,23 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-1128'
+project_name='FlowRL'
+exp_name='GSPO-Qwen2.5-7B-1015'
 
 # Algorithm settings
 adv_estimator=grpo
+loss_mode=gspo  # GSPO uses the "gspo" loss mode
+loss_agg_mode="seq-mean-token-mean"  # GSPO-specific: aggregate at sequence level
 
-# KL settings (ref policy needed for FlowRL, but KL penalty disabled)
-use_kl_in_reward=False  # Enable ref policy for ref_log_prob (needed for FlowRL loss)
+# KL settings (GSPO doesn't use KL in reward or loss)
+use_kl_in_reward=False
 kl_coef=0.0
-use_kl_loss=True
+use_kl_loss=False
 kl_loss_coef=0.0
 
-# FlowRL trajectory balance coefficient
-# TODO: tb_coef=15.0
-
-# DAPO Dual-clip parameters
-clip_ratio_low=0.2
-clip_ratio_high=0.28
-
-# Ablation: Set to true to use only clip (no hard mask), false for default CISPO (hard mask + clip)
-export FLOWRL_CLIP_ABLATION=true
+# GSPO Dual-clip parameters (tiny clip ratios as in paper)
+clip_ratio_low=0.0003   # GSPO paper recommendation
+clip_ratio_high=0.0004  # GSPO paper recommendation
 
 # Sequence lengths
 max_prompt_length=$((1024 * 2))
@@ -32,22 +28,13 @@ enable_overlong_buffer=True
 overlong_buffer_len=$((1024 * 4))
 overlong_penalty_factor=1.0
 
-# Loss aggregation
-loss_agg_mode="token-mean"
-
-# Filter groups - dynamic sampling
-enable_filter_groups=False
-filter_groups_metric=acc
-max_num_gen_batches=10
+# Note: Filter groups (dynamic sampling) is FlowRL-specific, not available in standard PPO
 
 # Batch sizes
-train_prompt_bsz=128
-gen_prompt_bsz=$((train_prompt_bsz * 3))
+train_prompt_bsz=512
+# Note: PPO trainer doesn't have gen_batch_size, only train_batch_size
 n_resp_per_prompt=8
 train_prompt_mini_bsz=32
-
-# Checkpoint saving frequency (-1 to disable periodic saves)
-save_freq=-1
 
 # Ray
 RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
@@ -77,14 +64,13 @@ offload=False
 gen_tp=1
 
 
-python3 -m recipe.flowrl.main_flowrl \
+python3 -m verl.trainer.main_ppo \
     data.train_files="${TRAIN_FILE}" \
     data.val_files="${TEST_FILE}" \
     data.prompt_key=prompt \
     data.truncation='left' \
     data.max_prompt_length=${max_prompt_length} \
     data.max_response_length=${max_response_length} \
-    data.gen_batch_size=${gen_prompt_bsz} \
     data.train_batch_size=${train_prompt_bsz} \
     actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
     algorithm.adv_estimator=${adv_estimator} \
@@ -92,12 +78,10 @@ python3 -m recipe.flowrl.main_flowrl \
     algorithm.kl_ctrl.kl_coef=${kl_coef} \
     actor_rollout_ref.actor.use_kl_loss=${use_kl_loss} \
     actor_rollout_ref.actor.kl_loss_coef=${kl_loss_coef} \
+    actor_rollout_ref.actor.policy_loss.loss_mode=${loss_mode} \
     actor_rollout_ref.actor.clip_ratio_low=${clip_ratio_low} \
     actor_rollout_ref.actor.clip_ratio_high=${clip_ratio_high} \
     actor_rollout_ref.actor.clip_ratio_c=10.0 \
-    algorithm.filter_groups.enable=${enable_filter_groups} \
-    algorithm.filter_groups.max_num_gen_batches=${max_num_gen_batches} \
-    algorithm.filter_groups.metric=${filter_groups_metric} \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.ref.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
@@ -117,7 +101,7 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.calculate_log_probs=False \
+    actor_rollout_ref.rollout.calculate_log_probs=True \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \
@@ -135,9 +119,11 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
     actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
     reward_model.reward_manager=dapo \
-    reward_model.overlong_buffer.enable=${enable_overlong_buffer} \
-    reward_model.overlong_buffer.len=${overlong_buffer_len} \
-    reward_model.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
+    +reward_model.reward_kwargs.overlong_buffer_cfg.enable=${enable_overlong_buffer} \
+    +reward_model.reward_kwargs.overlong_buffer_cfg.len=${overlong_buffer_len} \
+    +reward_model.reward_kwargs.overlong_buffer_cfg.penalty_factor=${overlong_penalty_factor} \
+    +reward_model.reward_kwargs.overlong_buffer_cfg.log=false \
+    +reward_model.reward_kwargs.max_resp_len=${max_response_length} \
     trainer.logger='["console","wandb"]' \
     trainer.project_name="${project_name}" \
     trainer.experiment_name="${exp_name}" \
@@ -145,7 +131,7 @@ python3 -m recipe.flowrl.main_flowrl \
     trainer.nnodes="${NNODES}" \
     trainer.val_before_train=True \
     trainer.test_freq=10 \
-    trainer.save_freq=${save_freq} \
+    trainer.save_freq=-1 \
     trainer.total_epochs=1 \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto

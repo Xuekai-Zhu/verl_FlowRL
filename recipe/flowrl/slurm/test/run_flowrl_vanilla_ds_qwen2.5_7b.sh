@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-1128'
+project_name='FlowRL'
+exp_name='FlowRL-vanilla-Qwen2.5-7B-dynamic-1019'
 
 # Algorithm settings
 adv_estimator=grpo
@@ -16,14 +16,18 @@ kl_loss_coef=0.0
 # FlowRL trajectory balance coefficient
 # TODO: tb_coef=15.0
 
+# TIS - Truncated Importance Sampling
+tis_imp_ratio_cap=2.0
+
 # DAPO Dual-clip parameters
 clip_ratio_low=0.2
 clip_ratio_high=0.28
 
-# Ablation: Set to true to use only clip (no hard mask), false for default CISPO (hard mask + clip)
-export FLOWRL_CLIP_ABLATION=true
+# FlowRL Loss Variant Selection
+# Options: "vanilla" (no TIS/clip), "flowrl_clip" (clip IS only), "flowrl_clip_tis" (both TIS + clip)
+export FLOWRL_LOSS_VARIANT="vanilla"
 
-# Sequence lengths
+# Sequence lengths 
 max_prompt_length=$((1024 * 2))
 max_response_length=$((1024 * 8))
 
@@ -36,12 +40,12 @@ overlong_penalty_factor=1.0
 loss_agg_mode="token-mean"
 
 # Filter groups - dynamic sampling
-enable_filter_groups=False
+enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
 
 # Batch sizes
-train_prompt_bsz=128
+train_prompt_bsz=512
 gen_prompt_bsz=$((train_prompt_bsz * 3))
 n_resp_per_prompt=8
 train_prompt_mini_bsz=32
@@ -117,7 +121,8 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.calculate_log_probs=False \
+    actor_rollout_ref.actor.tis_imp_ratio_cap=${tis_imp_ratio_cap} \
+    actor_rollout_ref.rollout.calculate_log_probs=True \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \

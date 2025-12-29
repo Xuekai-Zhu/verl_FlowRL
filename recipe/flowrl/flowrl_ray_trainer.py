@@ -12,17 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-FlowRL Ray Trainer that extends RayPPOTrainer with FlowRL-specific components.
+FlowRL Ray Trainer that extends RayDAPOTrainer with DAPO's advanced features.
 """
 
-from verl.trainer.ppo.ray_trainer import RayPPOTrainer
+from recipe.dapo.dapo_ray_trainer import RayDAPOTrainer
 
 
-class RayFlowRLTrainer(RayPPOTrainer):
+class RayFlowRLTrainer(RayDAPOTrainer):
     """
-    FlowRL trainer that uses the FlowRL advantage estimator.
-    The main difference is in the advantage estimation which is registered
-    as 'flowrl' in flowrl_adv_estimator.py
+    FlowRL trainer that inherits from DAPO trainer.
+
+    This trainer uses all of DAPO's features:
+    - Group filtering: Filters trajectories by reward variance
+    - ReMAX advantage estimation: Generates baseline with greedy sampling
+    - Batch balancing: Balances tokens across DP ranks
+    - Efficient data handling
+
+    The FlowRL-specific logic (trajectory balance objectives) is implemented
+    in the FlowRLActor, which is injected via FlowRLActorRolloutRefWorker.
     """
 
     def __init__(self, *args, **kwargs):

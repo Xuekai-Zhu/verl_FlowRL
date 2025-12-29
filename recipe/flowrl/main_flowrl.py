@@ -93,16 +93,16 @@ class TaskRunner:
         if config.actor_rollout_ref.actor.strategy in {"fsdp", "fsdp2"}:
             assert config.critic.strategy in {"fsdp", "fsdp2"}
 
-            # Use FlowRL custom worker instead of standard worker
+            # Use FlowRL custom worker for actor
             from recipe.flowrl.flowrl_fsdp_worker import FlowRLActorRolloutRefWorker
-            from verl.workers.fsdp_workers import CriticWorker  # , ActorRolloutRefWorker
+            from verl.workers.fsdp_workers import CriticWorker
 
             ActorRolloutRefWorker = FlowRLActorRolloutRefWorker
             ray_worker_group_cls = RayWorkerGroup
 
         elif config.actor_rollout_ref.actor.strategy == "megatron":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
-            from verl.workers.megatron_workers import ActorRolloutRefWorker, CriticWorker
+            from verl.workers.megatron_workers import CriticWorker, ActorRolloutRefWorker
 
             ray_worker_group_cls = RayWorkerGroup
 
@@ -164,6 +164,7 @@ class TaskRunner:
         )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
 
+        # FlowRL uses DAPO trainer for advanced features (group filtering, batch balancing, etc.)
         from recipe.flowrl.flowrl_ray_trainer import RayFlowRLTrainer
 
         trainer = RayFlowRLTrainer(

@@ -1966,3 +1966,126 @@ def compute_policy_loss_bypass_mode(
     pg_metrics.update(rollout_metrics)
 
     return pg_loss, pg_metrics
+
+
+@register_policy_loss("flowrl_token_level")
+def compute_policy_loss_flowrl_token_level(
+    old_log_prob: torch.Tensor,
+    log_prob: torch.Tensor,
+    advantages: torch.Tensor,
+    response_mask: torch.Tensor,
+    loss_agg_mode: str = "token-mean",
+    config: Optional[ActorConfig] = None,
+    rollout_is_weights: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    """
+    Compute the FlowRL trajectory balance objective with token-level importance weighting.
+
+    FlowRL (Flow Matching for Reinforcement Learning) uses trajectory balance constraints
+    to optimize the policy. The objective minimizes the squared residual between the
+    current policy's flow and the target flow defined by rewards and the old policy.
+
+    FlowRL objective:
+        residual_t = log π_θ(y_t|x,y_{<t}) - β·r_t - log π_old(y_t|x,y_{<t})
+        loss = E[w_t · residual_t²]
+        where w_t = clip(π_θ / π_old, [1-ε_low, 1+ε_high])
+
+    Args:
+        old_log_prob (torch.Tensor):
+            Log-probabilities under old policy, shape (batch_size, response_length).
+            Note: For async training, veRL automatically sets this to rollout_log_probs
+            when use_rollout_log_probs=True.
+        log_prob (torch.Tensor):
+            Log-probabilities under current policy, shape (batch_size, response_length).
+        advantages (torch.Tensor):
+            Token-level rewards, shape (batch_size, response_length).
+            In FlowRL, we interpret advantages as rewards.
+        response_mask (torch.Tensor):
+            Mask for valid tokens, shape (batch_size, response_length).
+        loss_agg_mode (str, optional):
+            Aggregation mode for agg_loss. Defaults to "token-mean".
+        config (Optional[ActorConfig]):
+            Actor configuration containing FlowRL hyperparameters:
+            - flowrl_beta_coef: β coefficient for reward scaling (default: 15.0)
+            - clip_ratio_low: Lower clipping threshold ε_low (default: 0.2)
+            - clip_ratio_high: Upper clipping threshold ε_high (default: 0.28)
+        rollout_log_probs (torch.Tensor | None):
+            Unused. Kept for API compatibility with other policy losses.
+
+    Returns:
+        tuple[torch.Tensor, dict[str, Any]]:
+            - pg_loss: Scalar policy loss
+            - pg_metrics: Dictionary with loss metrics
+    """
+
+    assert config is not None
+    assert isinstance(config, ActorConfig)
+
+    # Extract FlowRL hyperparameters
+    # β coefficient for reward scaling (hardcoded to standard FlowRL value)
+    beta_coef = 15.0
+    clip_ratio_low = config.clip_ratio_low if config.clip_ratio_low is not None else config.clip_ratio
+    clip_ratio_high = config.clip_ratio_high if config.clip_ratio_high is not None else config.clip_ratio
+
+    # Compute token-level FlowRL residual:
+    # residual_t = log_prob_t - β*reward_t - old_log_prob_t
+    token_residual = log_prob - beta_coef * advantages - old_log_prob
+
+    # Compute token-level importance weights
+    # ratio_t = exp(log_prob_t - old_log_prob_t)
+    negative_approx_kl = log_prob - old_log_prob
+    # Clamp for numerical stability
+    negative_approx_kl = torch.clamp(negative_approx_kl, min=-20.0, max=20.0)
+    ratio = torch.exp(negative_approx_kl)
+    ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
+
+    # Detach and clip importance weights around 1.0
+    # w_t = clip(ratio_t, [1-ε_low, 1+ε_high])
+    ratio_detached = ratio.detach()
+    clipped_ratio = torch.clamp(
+        ratio_detached,
+        min=1.0 - clip_ratio_low,
+        max=1.0 + clip_ratio_high
+    )
+
+    # FlowRL loss: weighted squared residuals
+    # L = E[w_t · residual_t²]
+    token_sq_residuals = token_residual ** 2
+    pg_losses = clipped_ratio * token_sq_residuals
+
+    # Apply rollout importance sampling weights if provided
+    if rollout_is_weights is not None:
+        pg_losses = pg_losses * rollout_is_weights
+
+    # Aggregate to scalar loss
+    pg_loss = agg_loss(
+        loss_mat=pg_losses, loss_mask=response_mask, loss_agg_mode=loss_agg_mode, **config.global_batch_info
+    )
+
+    # Compute clipping statistics
+    clipped_high = (ratio_detached > 1.0 + clip_ratio_high).float()
+    clipped_low = (ratio_detached < 1.0 - clip_ratio_low).float()
+    pg_clipfrac_high = verl_F.masked_mean(clipped_high, response_mask)
+    pg_clipfrac_low = verl_F.masked_mean(clipped_low, response_mask)
+    pg_clipfrac = verl_F.masked_mean(clipped_high + clipped_low, response_mask)
+
+    # Compute residual statistics for monitoring
+    residual_var = verl_F.masked_var(token_residual, response_mask)
+    residual_std = torch.sqrt(residual_var + 1e-8)
+
+    # Return metrics
+    pg_metrics = {
+        "actor/pg_clipfrac": pg_clipfrac.detach().item(),
+        "actor/pg_clipfrac_high": pg_clipfrac_high.detach().item(),
+        "actor/pg_clipfrac_low": pg_clipfrac_low.detach().item(),
+        "actor/ppo_kl": ppo_kl.detach().item(),
+        "actor/log_prob": verl_F.masked_mean(log_prob, response_mask).detach().item(),
+        "actor/old_log_prob": verl_F.masked_mean(old_log_prob, response_mask).detach().item(),
+        "actor/log_reward": verl_F.masked_mean(advantages, response_mask).detach().item(),
+        "actor/importance_weight": verl_F.masked_mean(clipped_ratio, response_mask).detach().item(),
+        "actor/imp_weight_raw": verl_F.masked_mean(ratio_detached, response_mask).detach().item(),
+        "actor/residual_mean": verl_F.masked_mean(token_residual, response_mask).detach().item(),
+        "actor/residual_std": residual_std.detach().item(),
+    }
+
+    return pg_loss, pg_metrics

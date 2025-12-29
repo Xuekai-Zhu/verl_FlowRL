@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-1128'
+project_name='FlowRL-SOTA'
+exp_name='FlowRL-Qwen2.5-32B-TIS'
 
 # Algorithm settings
 adv_estimator=grpo
 
-# KL settings (ref policy needed for FlowRL, but KL penalty disabled)
-use_kl_in_reward=False  # Enable ref policy for ref_log_prob (needed for FlowRL loss)
+# KL settings (disabled for FlowRL)
+use_kl_in_reward=False
 kl_coef=0.0
-use_kl_loss=True
+use_kl_loss=False
 kl_loss_coef=0.0
 
 # FlowRL trajectory balance coefficient
-# TODO: tb_coef=15.0
+tb_coef=15.0
+
+# TIS - Truncated Importance Sampling
+tis_imp_ratio_cap=2.0
 
 # DAPO Dual-clip parameters
 clip_ratio_low=0.2
 clip_ratio_high=0.28
 
-# Ablation: Set to true to use only clip (no hard mask), false for default CISPO (hard mask + clip)
-export FLOWRL_CLIP_ABLATION=true
-
 # Sequence lengths
 max_prompt_length=$((1024 * 2))
-max_response_length=$((1024 * 8))
+max_response_length=$((1024 * 20))
 
 # Overlong buffer for very long responses
 enable_overlong_buffer=True
@@ -36,48 +36,47 @@ overlong_penalty_factor=1.0
 loss_agg_mode="token-mean"
 
 # Filter groups - dynamic sampling
-enable_filter_groups=False
+enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
 
 # Batch sizes
-train_prompt_bsz=128
+train_prompt_bsz=512
 gen_prompt_bsz=$((train_prompt_bsz * 3))
-n_resp_per_prompt=8
+n_resp_per_prompt=16
 train_prompt_mini_bsz=32
 
-# Checkpoint saving frequency (-1 to disable periodic saves)
-save_freq=-1
-
-# Ray
+# Ray configuration
 RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
 WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
-NNODES=${NNODES:-1}
+NNODES=${NNODES:-16}  # 32B model typically requires 16 nodes (128 GPUs)
 
 # Paths
-MODEL_PATH=${MODEL_PATH:-"${WORKING_DIR}/downloads/models/Qwen/Qwen2.5-7B"}
-CKPTS_DIR=${CKPTS_DIR:-"${WORKING_DIR}/outputs/ckpts/${project_name}/${exp_name}"}
-TRAIN_FILE=${TRAIN_FILE:-"${WORKING_DIR}/downloads/data/dapo-math-17k.parquet"}
-TEST_FILE=${TEST_FILE:-"${WORKING_DIR}/downloads/data/aime-2024.parquet"}
+RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl"}
+MODEL_PATH=${MODEL_PATH:-"${RAY_DATA_HOME}/models/Qwen2.5-32B"}  # 32B model
+CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
+TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/dapo-math-17k.parquet"}
+TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/aime-2024.parquet"}
 
-# Sampling
+# Algorithm sampling parameters
 temperature=1.0
 top_p=1.0
-top_k=-1 # 0 for HF rollout, -1 for vLLM rollout
+top_k=-1  # -1 for vLLM rollout
 val_top_p=0.7
 
-# Performance Related Parameter
-n_gpus=8
-sp_size=1
+# Performance parameters
+sp_size=8
 use_dynamic_bsz=True
 actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
-offload=False
-gen_tp=1
+offload=True
+gen_tp=4
 
-
-python3 -m recipe.flowrl.main_flowrl \
+# Run FlowRL training with Ray
+ray job submit --no-wait --runtime-env="${RUNTIME_ENV}" \
+    --working-dir "${WORKING_DIR}" \
+    -- python3 -m recipe.flowrl.main_flowrl \
     data.train_files="${TRAIN_FILE}" \
     data.val_files="${TEST_FILE}" \
     data.prompt_key=prompt \
@@ -90,6 +89,7 @@ python3 -m recipe.flowrl.main_flowrl \
     algorithm.adv_estimator=${adv_estimator} \
     algorithm.use_kl_in_reward=${use_kl_in_reward} \
     algorithm.kl_ctrl.kl_coef=${kl_coef} \
+    algorithm.tb_coef=${tb_coef} \
     actor_rollout_ref.actor.use_kl_loss=${use_kl_loss} \
     actor_rollout_ref.actor.kl_loss_coef=${kl_loss_coef} \
     actor_rollout_ref.actor.clip_ratio_low=${clip_ratio_low} \
@@ -117,7 +117,10 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.calculate_log_probs=False \
+    actor_rollout_ref.actor.tis_imp_ratio_cap=${tis_imp_ratio_cap} \
+    actor_rollout_ref.actor.proj_layer=3 \
+    actor_rollout_ref.actor.proj_dropout=0.1 \
+    actor_rollout_ref.rollout.calculate_log_probs=True \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \
@@ -141,11 +144,11 @@ python3 -m recipe.flowrl.main_flowrl \
     trainer.logger='["console","wandb"]' \
     trainer.project_name="${project_name}" \
     trainer.experiment_name="${exp_name}" \
-    trainer.n_gpus_per_node=${n_gpus} \
+    trainer.n_gpus_per_node=8 \
     trainer.nnodes="${NNODES}" \
     trainer.val_before_train=True \
-    trainer.test_freq=10 \
-    trainer.save_freq=${save_freq} \
+    trainer.test_freq=5 \
+    trainer.save_freq=5 \
     trainer.total_epochs=1 \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto

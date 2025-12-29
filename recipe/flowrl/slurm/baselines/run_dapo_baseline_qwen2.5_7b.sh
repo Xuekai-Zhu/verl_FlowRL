@@ -1,27 +1,24 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-project_name='FlowRL_Scaling'
-exp_name='FlowRL-Qwen2.5-7B-1128'
+project_name='FlowRL'
+exp_name='DAPO-Baseline-Qwen2.5-7B'
 
 # Algorithm settings
 adv_estimator=grpo
 
-# KL settings (ref policy needed for FlowRL, but KL penalty disabled)
-use_kl_in_reward=False  # Enable ref policy for ref_log_prob (needed for FlowRL loss)
+# KL settings (DAPO doesn't use KL in reward or loss)
+use_kl_in_reward=False
 kl_coef=0.0
-use_kl_loss=True
+use_kl_loss=False
 kl_loss_coef=0.0
 
-# FlowRL trajectory balance coefficient
-# TODO: tb_coef=15.0
+# TIS - Truncated Importance Sampling
+tis_imp_ratio_cap=2.0
 
 # DAPO Dual-clip parameters
 clip_ratio_low=0.2
 clip_ratio_high=0.28
-
-# Ablation: Set to true to use only clip (no hard mask), false for default CISPO (hard mask + clip)
-export FLOWRL_CLIP_ABLATION=true
 
 # Sequence lengths
 max_prompt_length=$((1024 * 2))
@@ -36,18 +33,15 @@ overlong_penalty_factor=1.0
 loss_agg_mode="token-mean"
 
 # Filter groups - dynamic sampling
-enable_filter_groups=False
+enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
 
 # Batch sizes
-train_prompt_bsz=128
+train_prompt_bsz=512
 gen_prompt_bsz=$((train_prompt_bsz * 3))
 n_resp_per_prompt=8
 train_prompt_mini_bsz=32
-
-# Checkpoint saving frequency (-1 to disable periodic saves)
-save_freq=-1
 
 # Ray
 RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
@@ -77,7 +71,8 @@ offload=False
 gen_tp=1
 
 
-python3 -m recipe.flowrl.main_flowrl \
+
+python3 -m recipe.dapo.main_dapo \
     data.train_files="${TRAIN_FILE}" \
     data.val_files="${TEST_FILE}" \
     data.prompt_key=prompt \
@@ -117,7 +112,8 @@ python3 -m recipe.flowrl.main_flowrl \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.calculate_log_probs=False \
+    actor_rollout_ref.actor.tis_imp_ratio_cap=${tis_imp_ratio_cap} \
+    actor_rollout_ref.rollout.calculate_log_probs=True \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \
@@ -145,7 +141,7 @@ python3 -m recipe.flowrl.main_flowrl \
     trainer.nnodes="${NNODES}" \
     trainer.val_before_train=True \
     trainer.test_freq=10 \
-    trainer.save_freq=${save_freq} \
+    trainer.save_freq=50 \
     trainer.total_epochs=1 \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto
