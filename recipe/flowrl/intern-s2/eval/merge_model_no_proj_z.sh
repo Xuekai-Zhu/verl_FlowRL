@@ -6,9 +6,9 @@ set -x
 # ============================================
 BACKEND="${BACKEND:-fsdp}"
 # Your checkpoint from training
-LOCAL_DIR="${LOCAL_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-token-level-1221/20251220_162109/ckpts/global_step_90/actor}"
+LOCAL_DIR="${LOCAL_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-token-level-1221/20251220_162109/ckpts/global_step_190/actor}"
 # Where to save the merged HuggingFace model
-TARGET_DIR="${TARGET_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-token-level-1221/20251220_162109/huggingface/global_step_90}"
+TARGET_DIR="${TARGET_DIR:-/mnt/shared-storage-user/llmit/user/xuekaizhu/verl_FlowRL/work_dirs/FlowRL_Scaling/FlowRL-Qwen2.5-7B-token-level-1221/20251220_162109/huggingface/global_step_190}"
 # ============================================
 
 # Change to working directory
