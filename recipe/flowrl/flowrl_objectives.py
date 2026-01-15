@@ -282,8 +282,8 @@ def compute_flowrl_old_policy_no_log_z(
     seq_log_reward = verl_F.masked_mean(reward, response_mask, axis=1)
 
     # FlowRL residual WITHOUT log_z and using old policy: logpf - β*R - log_old
-    delta = avg_log_prob - beta_coef * seq_log_reward - avg_old_log_prob
-    # delta = avg_log_prob - beta_coef * seq_log_reward
+    # delta = avg_log_prob - beta_coef * seq_log_reward - avg_old_log_prob
+    delta = avg_log_prob - beta_coef * seq_log_reward
 
     # Importance ratio from current vs old policy
     log_w = verl_F.masked_sum(log_prob - old_log_prob, response_mask, axis=1)
@@ -324,7 +324,8 @@ def compute_flowrl_old_policy_no_log_z_token_level(
     # Token-level FlowRL residual WITHOUT log_z and using old policy:
     # residual_t = log_prob_t - β*reward_t - old_log_prob_t
     # Shape: (bs, response_length)
-    token_residual = log_prob - beta_coef * reward - old_log_prob
+    # token_residual = log_prob - beta_coef * reward - old_log_prob
+    token_residual = log_prob - beta_coef * reward
 
     # Compute TOKEN-LEVEL importance weights (following CISPO pattern)
     # ratio_t = exp(log_prob_t - old_log_prob_t), shape: (bs, response_length)

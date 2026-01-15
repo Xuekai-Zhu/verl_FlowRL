@@ -1,5 +1,5 @@
 rjob submit \
---name=flowrl-token-level-1221 \
+--name=flowrl-no-old-1230 \
 --gpu=8 \
 --memory=1600000 \
 --cpu=128 \
